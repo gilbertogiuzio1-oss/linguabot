@@ -8,18 +8,23 @@ export default async function handler(req, res) {
 
   for (const candidate of candidates) {
     try {
-      // Single Wikipedia call: search + thumbnail combined
-      const url = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(candidate)}&prop=pageimages&format=json&pithumbsize=400&gsrlimit=1&origin=*`;
-      const wikiRes = await fetch(url, { headers: { 'User-Agent': 'LinguaBot/1.0' } });
-      if (wikiRes.ok) {
-        const wikiData = await wikiRes.json();
-        const pages = wikiData?.query?.pages;
-        if (pages) {
-          const page = Object.values(pages)[0];
-          if (page?.thumbnail?.source) {
-            return res.status(200).json({ imageUrl: page.thumbnail.source });
-          }
-        }
+      const searchRes = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&srlimit=1`,
+        { headers: { 'User-Agent': 'LinguaBot/1.0' } }
+      );
+      if (!searchRes.ok) continue;
+      const searchData = await searchRes.json();
+      const title = searchData?.query?.search?.[0]?.title;
+      if (!title) continue;
+
+      const pageRes = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
+        { headers: { 'User-Agent': 'LinguaBot/1.0' } }
+      );
+      if (!pageRes.ok) continue;
+      const pageData = await pageRes.json();
+      if (pageData.thumbnail?.source) {
+        return res.status(200).json({ imageUrl: pageData.thumbnail.source });
       }
     } catch (_) { /* try next candidate */ }
   }
