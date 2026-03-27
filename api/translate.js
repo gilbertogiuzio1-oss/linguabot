@@ -35,7 +35,7 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside JSON)
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 800,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -44,50 +44,6 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside JSON)
     const text = data.content[0].text;
     const clean = text.replace(/```json|```/g, '').trim();
     const result = JSON.parse(clean);
-
-    // Add audio URLs and image URL
-    const langCodes = {
-      English: 'en',
-      French: 'fr',
-      Spanish: 'es',
-      German: 'de',
-      Italian: 'it',
-      Portuguese: 'pt'
-    };
-    for (const lang in result.translations) {
-      const translation = result.translations[lang].translation;
-      const langCode = langCodes[lang];
-      result.translations[lang].audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&q=${encodeURIComponent(translation)}&client=tw-ob`;
-    }
-    // Try Wikipedia for a relevant image using search API
-    const englishTranslation = result.translations?.English?.translation?.split(/[\/,]/)[0].trim();
-    const wikiCandidates = [result.imageQuery, englishTranslation, result.word].filter(Boolean);
-    for (const candidate of wikiCandidates) {
-      try {
-        // Use Wikipedia search to find best matching article
-        const searchRes = await fetch(
-          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&srlimit=1`,
-          { headers: { 'User-Agent': 'LinguaBot/1.0' } }
-        );
-        if (searchRes.ok) {
-          const searchData = await searchRes.json();
-          const title = searchData?.query?.search?.[0]?.title;
-          if (title) {
-            const pageRes = await fetch(
-              `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
-              { headers: { 'User-Agent': 'LinguaBot/1.0' } }
-            );
-            if (pageRes.ok) {
-              const pageData = await pageRes.json();
-              if (pageData.thumbnail?.source) {
-                result.imageUrl = pageData.thumbnail.source;
-                break;
-              }
-            }
-          }
-        }
-      } catch (_) { /* continue to next candidate */ }
-    }
 
     res.status(200).json(result);
   } catch (err) {

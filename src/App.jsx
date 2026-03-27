@@ -29,6 +29,19 @@ async function callAPI(word) {
   return response.json();
 }
 
+async function callImageAPI(word, imageQuery, englishTranslation) {
+  try {
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, imageQuery, englishTranslation }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.imageUrl || null;
+  } catch (_) { return null; }
+}
+
 export default function LinguaBot() {
   const [view, setView] = useState("chat");
   const [messages, setMessages] = useState([]);
@@ -59,16 +72,44 @@ export default function LinguaBot() {
     const w = (wordInput || input).trim();
     if (!w || loading) return;
     setInput("");
+
+    // Return cached result instantly
+    const cached = words.find(wd => wd.word.toLowerCase() === w.toLowerCase());
+    if (cached) {
+      setMessages(prev => [...prev, { type: "user", word: w }, { type: "bot", data: cached }]);
+      return;
+    }
+
     setLoading(true);
-    setMessages((prev) => [...prev, { type: "user", word: w }]);
+    setMessages(prev => [...prev, { type: "user", word: w }]);
     try {
       const result = await callAPI(w);
+      const msgId = Date.now();
+
+      // Show translation immediately, image loads in background
       saveWord(result);
-      setMessages((prev) => [...prev, { type: "bot", data: result }]);
+      setMessages(prev => [...prev, { type: "bot", data: result, id: msgId }]);
+      setLoading(false);
+
+      // Fetch image async — update card when ready
+      const englishTranslation = result.translations?.English?.translation;
+      callImageAPI(result.word, result.imageQuery, englishTranslation).then(imageUrl => {
+        if (!imageUrl) return;
+        setMessages(prev => prev.map(msg =>
+          msg.id === msgId ? { ...msg, data: { ...msg.data, imageUrl } } : msg
+        ));
+        setWords(prev => {
+          const updated = prev.map(wd =>
+            wd.word === result.word && !wd.imageUrl ? { ...wd, imageUrl } : wd
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          return updated;
+        });
+      });
     } catch (e) {
-      setMessages((prev) => [...prev, { type: "error", text: "Something went wrong. Please try again." }]);
+      setMessages(prev => [...prev, { type: "error", text: "Something went wrong. Please try again." }]);
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   function getFilteredWords() {
