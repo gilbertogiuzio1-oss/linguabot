@@ -61,7 +61,7 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside JSON)
     }
     // Try Wikipedia for a relevant image using search API
     const englishTranslation = result.translations?.English?.translation?.split(/[\/,]/)[0].trim();
-    const wikiCandidates = [result.word, englishTranslation, result.imageQuery].filter(Boolean);
+    const wikiCandidates = [result.imageQuery, englishTranslation, result.word].filter(Boolean);
     for (const candidate of wikiCandidates) {
       try {
         // Use Wikipedia search to find best matching article
