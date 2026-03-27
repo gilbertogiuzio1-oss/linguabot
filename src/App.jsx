@@ -2,10 +2,23 @@ import { useState, useRef, useEffect } from "react";
 
 const LANGUAGES = ["English", "French", "Spanish", "German", "Italian", "Portuguese"];
 
-const FLAG_EMOJIS = {
-  English: "🇬🇧", French: "🇫🇷", Spanish: "🇪🇸",
-  German: "🇩🇪", Italian: "🇮🇹", Portuguese: "🇧🇷",
+
+const FLAG_IMAGES = {
+  English: "gb", French: "fr", Spanish: "es",
+  German: "de", Italian: "it", Portuguese: "br",
 };
+
+function FlagImg({ lang, size = 20 }) {
+  const code = FLAG_IMAGES[lang];
+  if (!code) return <span style={{ fontSize: "1.1rem" }}>🌐</span>;
+  return (
+    <img
+      src={`https://flagcdn.com/w${size}/${code}.png`}
+      alt={lang}
+      style={{ width: size, height: "auto", borderRadius: "2px", verticalAlign: "middle" }}
+    />
+  );
+}
 
 const LANG_COLORS = {
   English:    { accent: "#4a9eff", bg: "rgba(74,158,255,0.07)",   border: "rgba(74,158,255,0.25)" },
@@ -261,7 +274,7 @@ export default function LinguaBot() {
                             return (
                               <div key={lang} style={styles.accordionLangCard}>
                                 <div style={styles.langCardHeader}>
-                                  <span style={styles.langFlag}>{FLAG_EMOJIS[lang]}</span>
+                                  <FlagImg lang={lang} />
                                   <span style={styles.langCardName}>{lang}</span>
                                   <span style={styles.langTranslation}>{t.translation}</span>
                                                   <button onClick={() => speakWord(t.translation, lang)} style={styles.playBtn} title="Play pronunciation">
@@ -328,7 +341,7 @@ function WordCard({ data }) {
         <div style={{ flex: 1 }}>
           <div style={styles.cardWordTitle}>{data.word}</div>
           <div style={styles.cardBadges}>
-            <span style={styles.badgeLang}>{FLAG_EMOJIS[data.detectedLanguage] || "🌐"} {data.detectedLanguage}</span>
+            <span style={styles.badgeLang}><FlagImg lang={data.detectedLanguage} /> {data.detectedLanguage}</span>
             <span style={styles.badgeType}>{data.wordType}</span>
           </div>
         </div>
@@ -350,7 +363,7 @@ function WordCard({ data }) {
           return (
             <div key={lang} className="lang-card" style={{ ...styles.langCard, background: lc.bg, borderColor: lc.border }}>
               <div style={styles.langCardHeader}>
-                <span style={styles.langFlag}>{FLAG_EMOJIS[lang]}</span>
+                <FlagImg lang={lang} />
                 <span style={styles.langCardName}>{lang}</span>
                 <span style={{ ...styles.langTranslation, color: lc.accent }}>{t.translation}</span>
                 <button onClick={() => speakWord(t.translation, lang)} style={{ ...styles.playBtn, color: lc.accent }} title="Play pronunciation">
