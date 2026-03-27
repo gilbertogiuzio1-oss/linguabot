@@ -7,6 +7,15 @@ const FLAG_EMOJIS = {
   German: "🇩🇪", Italian: "🇮🇹", Portuguese: "🇧🇷",
 };
 
+const LANG_COLORS = {
+  English:    { accent: "#4a9eff", bg: "rgba(74,158,255,0.07)",   border: "rgba(74,158,255,0.25)" },
+  French:     { accent: "#e8526a", bg: "rgba(232,82,106,0.07)",   border: "rgba(232,82,106,0.25)" },
+  Spanish:    { accent: "#f4a242", bg: "rgba(244,162,66,0.07)",   border: "rgba(244,162,66,0.25)" },
+  German:     { accent: "#9ba8b8", bg: "rgba(155,168,184,0.07)",  border: "rgba(155,168,184,0.25)" },
+  Italian:    { accent: "#5ec47a", bg: "rgba(94,196,122,0.07)",   border: "rgba(94,196,122,0.25)" },
+  Portuguese: { accent: "#4ecdc4", bg: "rgba(78,205,196,0.07)",   border: "rgba(78,205,196,0.25)" },
+};
+
 const EXAMPLES = ["serendipity", "Schadenfreude", "saudade", "renaissance", "zeitgeist", "wanderlust"];
 const STORAGE_KEY = "linguabot-words";
 
@@ -251,6 +260,8 @@ export default function LinguaBot() {
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #2a2a35; border-radius: 2px; }
+        .lang-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .lang-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.4); }
       `}</style>
     </div>
   );
@@ -276,7 +287,7 @@ function WordCard({ data }) {
         <div style={{ flex: 1 }}>
           <div style={styles.cardWordTitle}>{data.word}</div>
           <div style={styles.cardBadges}>
-            <span style={styles.badgeLang}>{data.detectedLanguage}</span>
+            <span style={styles.badgeLang}>{FLAG_EMOJIS[data.detectedLanguage] || "🌐"} {data.detectedLanguage}</span>
             <span style={styles.badgeType}>{data.wordType}</span>
           </div>
         </div>
@@ -294,13 +305,14 @@ function WordCard({ data }) {
         {LANGUAGES.map((lang) => {
           const t = data.translations?.[lang];
           if (!t) return null;
+          const lc = LANG_COLORS[lang] || {};
           return (
-            <div key={lang} style={styles.langCard}>
+            <div key={lang} className="lang-card" style={{ ...styles.langCard, background: lc.bg, borderColor: lc.border }}>
               <div style={styles.langCardHeader}>
                 <span style={styles.langFlag}>{FLAG_EMOJIS[lang]}</span>
                 <span style={styles.langCardName}>{lang}</span>
-                <span style={styles.langTranslation}>{t.translation}</span>
-                <button onClick={() => speakWord(t.translation, lang)} style={styles.playBtn} title="Play pronunciation">
+                <span style={{ ...styles.langTranslation, color: lc.accent }}>{t.translation}</span>
+                <button onClick={() => speakWord(t.translation, lang)} style={{ ...styles.playBtn, color: lc.accent }} title="Play pronunciation">
                   🔊
                 </button>
               </div>
@@ -345,7 +357,7 @@ const styles = {
   input: { flex: 1, background: "transparent", border: "none", outline: "none", color: "#e8e2d9", fontFamily: "'DM Sans', sans-serif", fontSize: "1rem" },
   sendBtn: { background: "#c8a96e", color: "#0c0c0f", border: "none", borderRadius: "10px", width: "44px", height: "44px", fontSize: "1.2rem", cursor: "pointer", fontWeight: "bold" },
   inputHint: { fontSize: "0.75rem", color: "#333", textAlign: "center", marginTop: "8px" },
-  botCard: { background: "#0e0e14", border: "1px solid #1e1e28", borderRadius: "16px", padding: "28px", width: "100%" },
+  botCard: { background: "rgba(14,14,20,0.75)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "28px", width: "100%" },
   cardHeader: { display: "flex", alignItems: "flex-start", gap: "16px", marginBottom: "16px" },
   cardWordTitle: { fontFamily: "'Playfair Display', serif", fontSize: "2rem", color: "#c8a96e" },
   cardBadges: { display: "flex", gap: "8px" },
