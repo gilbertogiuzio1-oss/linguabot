@@ -3,31 +3,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { word, imageQuery, englishTranslation } = req.body;
-  const candidates = [imageQuery, englishTranslation?.split(/[\/,]/)[0]?.trim(), word].filter(Boolean);
+  const { imageQuery, englishTranslation, word } = req.body;
+  const query = imageQuery || englishTranslation?.split(/[\/,]/)[0]?.trim() || word;
 
-  for (const candidate of candidates) {
-    try {
-      const searchRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&srlimit=1`,
-        { headers: { 'User-Agent': 'LinguaBot/1.0' } }
-      );
-      if (!searchRes.ok) continue;
-      const searchData = await searchRes.json();
-      const title = searchData?.query?.search?.[0]?.title;
-      if (!title) continue;
-
-      const pageRes = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
-        { headers: { 'User-Agent': 'LinguaBot/1.0' } }
-      );
-      if (!pageRes.ok) continue;
-      const pageData = await pageRes.json();
-      if (pageData.thumbnail?.source) {
-        return res.status(200).json({ imageUrl: pageData.thumbnail.source });
-      }
-    } catch (_) { /* try next candidate */ }
-  }
+  try {
+    const response = await fetch(
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=square`,
+      { headers: { Authorization: process.env.PEXELS_API_KEY } }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      const imageUrl = data.photos?.[0]?.src?.medium || null;
+      return res.status(200).json({ imageUrl });
+    }
+  } catch (_) {}
 
   res.status(200).json({ imageUrl: null });
 }
