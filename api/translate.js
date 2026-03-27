@@ -59,20 +59,31 @@ Respond ONLY with a valid JSON object (no markdown, no explanation outside JSON)
       const langCode = langCodes[lang];
       result.translations[lang].audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&q=${encodeURIComponent(translation)}&client=tw-ob`;
     }
-    // Try Wikipedia for a relevant image (word first, then English translation as fallback)
-    const wikiCandidates = [result.word, result.translations?.English?.translation, result.imageQuery];
+    // Try Wikipedia for a relevant image using search API
+    const englishTranslation = result.translations?.English?.translation?.split(/[\/,]/)[0].trim();
+    const wikiCandidates = [result.word, englishTranslation, result.imageQuery].filter(Boolean);
     for (const candidate of wikiCandidates) {
-      if (!candidate) continue;
       try {
-        const wikiRes = await fetch(
-          `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(candidate)}`,
+        // Use Wikipedia search to find best matching article
+        const searchRes = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(candidate)}&format=json&srlimit=1`,
           { headers: { 'User-Agent': 'LinguaBot/1.0' } }
         );
-        if (wikiRes.ok) {
-          const wikiData = await wikiRes.json();
-          if (wikiData.thumbnail?.source) {
-            result.imageUrl = wikiData.thumbnail.source;
-            break;
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          const title = searchData?.query?.search?.[0]?.title;
+          if (title) {
+            const pageRes = await fetch(
+              `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
+              { headers: { 'User-Agent': 'LinguaBot/1.0' } }
+            );
+            if (pageRes.ok) {
+              const pageData = await pageRes.json();
+              if (pageData.thumbnail?.source) {
+                result.imageUrl = pageData.thumbnail.source;
+                break;
+              }
+            }
           }
         }
       } catch (_) { /* continue to next candidate */ }
