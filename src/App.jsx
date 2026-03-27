@@ -214,11 +214,9 @@ export default function LinguaBot() {
                                   <span style={styles.langFlag}>{FLAG_EMOJIS[lang]}</span>
                                   <span style={styles.langCardName}>{lang}</span>
                                   <span style={styles.langTranslation}>{t.translation}</span>
-                                  {t.audioUrl && (
-                                    <button onClick={() => { const audio = new Audio(t.audioUrl); audio.play(); }} style={styles.playBtn} title="Play pronunciation">
-                                      🔊
-                                    </button>
-                                  )}
+                                                  <button onClick={() => speakWord(t.translation, lang)} style={styles.playBtn} title="Play pronunciation">
+                                    🔊
+                                  </button>
                                 </div>
                                 <p style={styles.langExample}>"{t.example}"</p>
                               </div>
@@ -258,11 +256,19 @@ export default function LinguaBot() {
   );
 }
 
+const LANG_CODES = {
+  English: 'en-US', French: 'fr-FR', Spanish: 'es-ES',
+  German: 'de-DE', Italian: 'it-IT', Portuguese: 'pt-BR',
+};
+
+function speakWord(text, lang) {
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = LANG_CODES[lang] || 'en-US';
+  window.speechSynthesis.speak(utterance);
+}
+
 function WordCard({ data }) {
-  const playAudio = (audioUrl) => {
-    const audio = new Audio(audioUrl);
-    audio.play();
-  };
 
   return (
     <div style={styles.botCard}>
@@ -294,11 +300,9 @@ function WordCard({ data }) {
                 <span style={styles.langFlag}>{FLAG_EMOJIS[lang]}</span>
                 <span style={styles.langCardName}>{lang}</span>
                 <span style={styles.langTranslation}>{t.translation}</span>
-                {t.audioUrl && (
-                  <button onClick={() => playAudio(t.audioUrl)} style={styles.playBtn} title="Play pronunciation">
-                    🔊
-                  </button>
-                )}
+                <button onClick={() => speakWord(t.translation, lang)} style={styles.playBtn} title="Play pronunciation">
+                  🔊
+                </button>
               </div>
               <p style={styles.langExample}>"{t.example}"</p>
             </div>
